@@ -131,7 +131,7 @@ docker {
 githubRelease {
     token(findEnv("publishing.github.token"))
     owner = "sgpublic"
-    repo = "poetry-docker"
+    repo = "docker-linuxqq"
     tagName = "$version"
     releaseName = "$version"
     overwrite = true
