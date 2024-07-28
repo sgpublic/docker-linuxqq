@@ -62,7 +62,7 @@ tasks {
             listOf(
                 "mkdir -p /home/linuxqq",
                 "chown 1000:1000 /home/linuxqq",
-                "sed -i 's/deb.debian.org/mirrors.aliyun.com/' /etc/apt/sources.list",
+//                "sed -i 's/deb.debian.org/mirrors.aliyun.com/' /etc/apt/sources.list",
                 "apt-get update",
                 rm(
                     "/usr/share/fonts/*",
