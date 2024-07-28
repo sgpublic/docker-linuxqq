@@ -8,7 +8,6 @@ import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
 import com.bmuschko.gradle.docker.tasks.image.Dockerfile
 import com.bmuschko.gradle.docker.tasks.image.Dockerfile.CopyFile
-import de.undercouch.gradle.tasks.download.Download
 import io.github.sgpublic.QQNTDownload
 import io.github.sgpublic.aptInstall
 import io.github.sgpublic.rm
@@ -28,14 +27,8 @@ tasks {
 
     val downloadLatestQQNT by creating(QQNTDownload::class)
 
-    val utilLinux = "util-linux_2.38.1-5+deb12u1_amd64.deb"
-    val downloadUtilLinux by creating(Download::class) {
-        src("http://ftp.cn.debian.org/debian/pool/main/u/util-linux/$utilLinux")
-        dest(File(project.layout.buildDirectory.dir("util-linux").get().asFile, utilLinux))
-    }
-
     val dockerCreateDockerfile by creating(Dockerfile::class) {
-        dependsOn(downloadLatestQQNT, downloadUtilLinux)
+        dependsOn(downloadLatestQQNT)
         doFirst {
             delete(layout.buildDirectory.file("docker-linuxqq"))
             copy {
@@ -48,11 +41,6 @@ tasks {
                 include("${downloadLatestQQNT["linuxqq.file"]}")
                 into(layout.buildDirectory.file("docker-linuxqq"))
             }
-            copy {
-                from(layout.buildDirectory.dir("util-linux"))
-                include(utilLinux)
-                into(layout.buildDirectory.file("docker-linuxqq"))
-            }
         }
         group = "docker"
         destFile = layout.buildDirectory.file("docker-linuxqq/Dockerfile")
@@ -60,12 +48,14 @@ tasks {
         workingDir("/tmp")
         copyFile("./startapp.sh", "/startapp.sh")
         copyFile(provider { CopyFile("./*.deb", "/tmp/") })
+        val home = "/home/linuxqq"
         environmentVariable(provider {
             mapOf(
                 "TZ" to "Asia/Shanghai",
-                "HOME" to "/home/linuxqq",
+                "HOME" to home,
                 "APP_NAME" to "linuxqq",
                 "APP_VERSION" to "${downloadLatestQQNT["linuxqq.version"]}",
+                "XDG_CONFIG_HOME" to "$home/config",
             )
         })
         runCommand(provider {
@@ -74,6 +64,9 @@ tasks {
                 "chown 1000:1000 /home/linuxqq",
                 "sed -i 's/deb.debian.org/mirrors.aliyun.com/' /etc/apt/sources.list",
                 "apt-get update",
+                rm(
+                    "/usr/share/fonts/*",
+                ),
                 aptInstall(
                     "libcurl4",
                     "libnss3",
@@ -85,26 +78,23 @@ tasks {
                     "libxtst6",
                     "xauth",
                     "xvfb",
-                    "fontconfig",
+                    "fonts-wqy-microhei",
 
-                    "slirp4netns",
-                    "socat",
-                    "util-linux",
-                    "bsdmainutils",
+//                    "slirp4netns",
+//                    "socat",
+//                    "util-linux",
+//                    "bsdmainutils",
 
                     "/tmp/${downloadLatestQQNT["linuxqq.file"]}",
-                    "/tmp/$utilLinux",
                 ),
-
                 "apt-get clean",
                 rm(
                     "/tmp/${downloadLatestQQNT["linuxqq.file"]}",
-                    "/tmp/$utilLinux",
                 ),
             ).joinToString(" &&\\\n ")
         })
         workingDir("/home/linuxqq")
-        volume("/home/linuxqq/.cache/QQ")
+        volume("$home/config")
     }
     val dockerBuildImage by creating(DockerBuildImage::class) {
         group = "docker"
