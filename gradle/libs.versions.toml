@@ -6,11 +6,15 @@ buildsrc-utils = "1.0.0-alpha02"
 
 download = "5.6.0"
 gson = "2.10.1"
+jgit = "6.8.0.202311291450-r"
+jgit-ssh = "6.6.0.202305301015-r"
 
 [libraries]
 kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 download-gradle-plugin = { group = "de.undercouch.download", name = "de.undercouch.download.gradle.plugin", version.ref = "download" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+jgit = { group = "org.eclipse.jgit", name = "org.eclipse.jgit", version.ref = "jgit" }
+jgit-ssh = { group = "org.eclipse.jgit", name = "org.eclipse.jgit.ssh.jsch", version.ref = "jgit-ssh" }
 
 [plugins]
 docker-api = { id = "com.bmuschko.docker-remote-api", version.ref = "docker" }

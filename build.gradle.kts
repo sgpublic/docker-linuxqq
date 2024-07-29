@@ -8,7 +8,9 @@ import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
 import com.bmuschko.gradle.docker.tasks.image.Dockerfile
 import com.bmuschko.gradle.docker.tasks.image.Dockerfile.CopyFile
-import io.github.sgpublic.QQNTDownload
+import com.github.breadmoirai.githubreleaseplugin.GithubReleaseTask
+import de.undercouch.gradle.tasks.download.Download
+import io.github.sgpublic.QQNTInfo
 import io.github.sgpublic.aptInstall
 import io.github.sgpublic.rm
 import io.github.sgpublic.gradle.VersionGen
@@ -25,7 +27,15 @@ version = "${VersionGen.COMMIT_COUNT_VERSION}"
 tasks {
     val tag = "mhmzx/docker-linuxqq"
 
-    val downloadLatestQQNT by creating(QQNTDownload::class)
+    val qqntInfo by creating(QQNTInfo::class) {
+        githubToken = findEnv("publishing.github.token")
+    }
+
+    val downloadLatestQQNT by creating(Download::class) {
+        group = "linuxqq"
+        src(qqntInfo["linuxqq.url"])
+        dest(layout.buildDirectory.file("linuxqq/${qqntInfo["linuxqq.file"]}"))
+    }
 
     val dockerCreateDockerfile by creating(Dockerfile::class) {
         dependsOn(downloadLatestQQNT)
@@ -38,7 +48,7 @@ tasks {
             }
             copy {
                 from(layout.buildDirectory.dir("linuxqq"))
-                include("${downloadLatestQQNT["linuxqq.file"]}")
+                include("${qqntInfo["linuxqq.file"]}")
                 into(layout.buildDirectory.file("docker-linuxqq"))
             }
         }
@@ -54,7 +64,7 @@ tasks {
                 "TZ" to "Asia/Shanghai",
                 "HOME" to home,
                 "APP_NAME" to "linuxqq",
-                "APP_VERSION" to "${downloadLatestQQNT["linuxqq.version"]}",
+                "APP_VERSION" to "${qqntInfo["linuxqq.version"]}",
                 "XDG_CONFIG_HOME" to "$home/config",
             )
         })
@@ -85,11 +95,11 @@ tasks {
 //                    "util-linux",
 //                    "bsdmainutils",
 
-                    "/tmp/${downloadLatestQQNT["linuxqq.file"]}",
+                    "/tmp/${qqntInfo["linuxqq.file"]}",
                 ),
                 "apt-get clean",
                 rm(
-                    "/tmp/${downloadLatestQQNT["linuxqq.file"]}",
+                    "/tmp/${qqntInfo["linuxqq.file"]}",
                 ),
             ).joinToString(" &&\\\n ")
         })
@@ -101,8 +111,8 @@ tasks {
         dependsOn(dockerCreateDockerfile)
         inputDir = layout.buildDirectory.dir("docker-linuxqq")
         dockerFile = dockerCreateDockerfile.destFile
-        images.add(provider { "$tag:v${downloadLatestQQNT["linuxqq.version"]}-$version" })
-        images.add(provider { "$tag:v${downloadLatestQQNT["linuxqq.version"]}" })
+        images.add(provider { "$tag:v${qqntInfo["linuxqq.version"]}-$version" })
+        images.add(provider { "$tag:v${qqntInfo["linuxqq.version"]}" })
         images.add("$tag:latest")
         noCache = true
     }
@@ -110,14 +120,25 @@ tasks {
     val dockerPushBuildBookImageOfficial by creating(DockerPushImage::class) {
         group = "docker"
         dependsOn(dockerBuildImage)
-        images.add(provider { "$tag:v${downloadLatestQQNT["linuxqq.version"]}-$version" })
-        images.add(provider { "$tag:v${downloadLatestQQNT["linuxqq.version"]}" })
+        images.add(provider { "$tag:v${qqntInfo["linuxqq.version"]}-$version" })
+        images.add(provider { "$tag:v${qqntInfo["linuxqq.version"]}" })
         images.add("$tag:latest")
+    }
+
+    val githubRelease by getting(GithubReleaseTask::class) {
+        authorization = provider {
+            "Token ${findEnv("publishing.github.token").get()}"
+        }
+        owner = "sgpublic"
+        repo = "docker-linuxqq"
+        tagName = provider { "v${qqntInfo["linuxqq.version"]}-$version" }
+        releaseName = provider { "v${qqntInfo["linuxqq.version"]}-$version" }
+        overwrite = true
     }
 }
 
-fun findEnv(name: String): String {
-    return findProperty(name)?.toString()?.takeIf { it.isNotBlank() }
+fun findEnv(name: String) = provider {
+    findProperty(name)?.toString()?.takeIf { it.isNotBlank() }
         ?: System.getenv(name.replace(".", "_").uppercase())
 }
 
@@ -126,13 +147,4 @@ docker {
         username = findEnv("publishing.docker.username")
         password = findEnv("publishing.docker.password")
     }
-}
-
-githubRelease {
-    token(findEnv("publishing.github.token"))
-    owner = "sgpublic"
-    repo = "docker-linuxqq"
-    tagName = "$version"
-    releaseName = "$version"
-    overwrite = true
 }
