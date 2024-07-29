@@ -120,7 +120,7 @@ tasks {
         dependsOn(dockerCreateDockerfile)
         inputDir = layout.buildDirectory.dir("docker-linuxqq")
         dockerFile = dockerCreateDockerfile.destFile
-        images.add(provider { "$tag:v${qqntInfo["linuxqq.version"]}-$version" })
+        images.add(provider { "$tag:v${qqntInfo["linuxqq.version"]}-${qqntInfo["dockerimage.version"]}" })
         images.add(provider { "$tag:v${qqntInfo["linuxqq.version"]}" })
         images.add("$tag:latest")
         noCache = true
@@ -129,7 +129,7 @@ tasks {
     val dockerPushBuildBookImageOfficial by creating(DockerPushImage::class) {
         group = "docker"
         dependsOn(dockerBuildImage)
-        images.add(provider { "$tag:v${qqntInfo["linuxqq.version"]}-$version" })
+        images.add(provider { "$tag:v${qqntInfo["linuxqq.version"]}-${qqntInfo["dockerimage.version"]}" })
         images.add(provider { "$tag:v${qqntInfo["linuxqq.version"]}" })
         images.add("$tag:latest")
     }
@@ -140,8 +140,8 @@ tasks {
         }
         owner = "sgpublic"
         repo = "docker-linuxqq"
-        tagName = provider { "v${qqntInfo["linuxqq.version"]}-$version" }
-        releaseName = provider { "v${qqntInfo["linuxqq.version"]}-$version" }
+        tagName = provider { "v${qqntInfo["linuxqq.version"]}-${qqntInfo["dockerimage.version"]}" }
+        releaseName = provider { "v${qqntInfo["linuxqq.version"]}-${qqntInfo["dockerimage.version"]}" }
         overwrite = true
     }
 }

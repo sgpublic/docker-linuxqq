@@ -59,9 +59,12 @@ abstract class QQNTInfo: DefaultTask() {
         val qqntFile = "linuxqq-$qqntVersion.deb"
         content.add("linuxqq.file", JsonPrimitive(qqntFile))
 
-        content.add("dockerimage.verison", JsonPrimitive(project.version.toString()))
+        var dockerImageVersion = project.version.toString().toLong()
+        content.add("dockerimage.version", JsonPrimitive(dockerImageVersion))
 
         if (content != readCache()) {
+            dockerImageVersion += 1
+            content.add("dockerimage.version", JsonPrimitive(dockerImageVersion))
             cacheFile.writeText(GsonBuilder()
                 .setPrettyPrinting()
                 .create()
@@ -74,7 +77,7 @@ abstract class QQNTInfo: DefaultTask() {
                 .setAuthor("updater", "updater@example.com")
                 .call()
             git.tag()
-                .setName("v${qqntVersion}-${project.version}")
+                .setName("v${qqntVersion}-${dockerImageVersion}")
                 .call()
             git.push()
                 .also {
