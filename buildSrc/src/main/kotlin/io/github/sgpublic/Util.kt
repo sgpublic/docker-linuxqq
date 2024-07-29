@@ -32,6 +32,10 @@ fun commandLine(command: String): String {
         .inputStream.reader().readText().trim()
 }
 
+fun command(vararg command: String): String {
+    return command.joinToString(" &&\\\n ")
+}
+
 fun aptInstall(vararg pkg: String): String {
     return "apt-get install -y ${pkg.joinToString(" ")}"
 }

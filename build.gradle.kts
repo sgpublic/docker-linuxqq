@@ -9,8 +9,8 @@ import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
 import com.bmuschko.gradle.docker.tasks.image.Dockerfile
 import com.bmuschko.gradle.docker.tasks.image.Dockerfile.CopyFile
 import com.github.breadmoirai.githubreleaseplugin.GithubReleaseTask
-import de.undercouch.gradle.tasks.download.Download
 import io.github.sgpublic.QQNTInfo
+import io.github.sgpublic.command
 import io.github.sgpublic.aptInstall
 import io.github.sgpublic.rm
 import io.github.sgpublic.gradle.VersionGen
@@ -28,17 +28,10 @@ tasks {
     val tag = "mhmzx/docker-linuxqq"
 
     val qqntInfo by creating(QQNTInfo::class) {
-        githubToken = findEnv("publishing.github.token")
-    }
-
-    val downloadLatestQQNT by creating(Download::class) {
-        group = "linuxqq"
-        src(qqntInfo["linuxqq.url"])
-        dest(layout.buildDirectory.file("linuxqq/${qqntInfo["linuxqq.file"]}"))
+        token = findEnv("publishing.gitlab.token")
     }
 
     val dockerCreateDockerfile by creating(Dockerfile::class) {
-        dependsOn(downloadLatestQQNT)
         doFirst {
             delete(layout.buildDirectory.file("docker-linuxqq"))
             copy {
@@ -46,18 +39,69 @@ tasks {
                 include("*.sh")
                 into(layout.buildDirectory.dir("docker-linuxqq"))
             }
-            copy {
-                from(layout.buildDirectory.dir("linuxqq"))
-                include("${qqntInfo["linuxqq.file"]}")
-                into(layout.buildDirectory.file("docker-linuxqq"))
-            }
         }
         group = "docker"
         destFile = layout.buildDirectory.file("docker-linuxqq/Dockerfile")
-        from("jlesage/baseimage-gui:${findProperty("baseimggui.version")}")
-        workingDir("/tmp")
+
+        // 安装 QQNT
+        from(Dockerfile.From("jlesage/baseimage-gui:${findProperty("baseimggui.version")}").withStage("qqntinstaller"))
+        runCommand(provider {
+            command(
+                "apt-get update",
+                aptInstall(
+                    "curl",
+                ),
+                "mkdir -p /tmp",
+                "curl -o /tmp/${qqntInfo["linuxqq.file"]} --retry 5 --retry-delay 3 ${qqntInfo["linuxqq.url"]}",
+                aptInstall(
+                    "/tmp/${qqntInfo["linuxqq.file"]}",
+                ),
+                rm(
+                    "/tmp/${qqntInfo["linuxqq.file"]}",
+                    "/usr/share/fonts/*",
+                ),
+            )
+        })
+
+        // 安装依赖
+        from(Dockerfile.From("jlesage/baseimage-gui:${findProperty("baseimggui.version")}").withStage("deps"))
+        runCommand(command(
+            "apt-get update",
+            aptInstall(
+                "libcurl4",
+                "libnss3",
+                "libgbm-dev",
+                "libnotify-dev",
+                "libasound2",
+                "libgtk-3-0",
+                "libxss1",
+                "libxtst6",
+                "xauth",
+                "xvfb",
+
+//                    "slirp4netns",
+//                    "socat",
+//                    "util-linux",
+//                    "bsdmainutils",
+            ),
+            rm(
+                "/usr/share/fonts/*",
+            ),
+            aptInstall(
+                "fonts-wqy-microhei",
+            )
+        ))
+
+        // 最终构建
+        from(Dockerfile.From("jlesage/baseimage-gui:${findProperty("baseimggui.version")}"))
+        runCommand(command(
+            "mkdir -p /home/linuxqq",
+            "chown 1000:1000 /home/linuxqq",
+        ))
+        workingDir("/home/linuxqq")
+        copyFile(CopyFile("/", "/").withStage("deps"))
+        copyFile(CopyFile("/", "/").withStage("qqntinstaller"))
         copyFile("./startapp.sh", "/startapp.sh")
-        copyFile(provider { CopyFile("./*.deb", "/tmp/") })
         val home = "/home/linuxqq"
         environmentVariable(provider {
             mapOf(
@@ -66,44 +110,9 @@ tasks {
                 "APP_NAME" to "linuxqq",
                 "APP_VERSION" to "${qqntInfo["linuxqq.version"]}",
                 "XDG_CONFIG_HOME" to "$home/config",
+                "QQ_HOME" to "/opt/QQ",
             )
         })
-        runCommand(provider {
-            listOf(
-                "mkdir -p /home/linuxqq",
-                "chown 1000:1000 /home/linuxqq",
-//                "sed -i 's/deb.debian.org/mirrors.aliyun.com/' /etc/apt/sources.list",
-                "apt-get update",
-                rm(
-                    "/usr/share/fonts/*",
-                ),
-                aptInstall(
-                    "libcurl4",
-                    "libnss3",
-                    "libgbm-dev",
-                    "libnotify-dev",
-                    "libasound2",
-                    "libgtk-3-0",
-                    "libxss1",
-                    "libxtst6",
-                    "xauth",
-                    "xvfb",
-                    "fonts-wqy-microhei",
-
-//                    "slirp4netns",
-//                    "socat",
-//                    "util-linux",
-//                    "bsdmainutils",
-
-                    "/tmp/${qqntInfo["linuxqq.file"]}",
-                ),
-                "apt-get clean",
-                rm(
-                    "/tmp/${qqntInfo["linuxqq.file"]}",
-                ),
-            ).joinToString(" &&\\\n ")
-        })
-        workingDir("/home/linuxqq")
         volume("$home/config")
     }
     val dockerBuildImage by creating(DockerBuildImage::class) {

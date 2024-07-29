@@ -15,5 +15,5 @@ dependencies {
     implementation(libs.jgit) {
         exclude("com.jcraft", "jsch")
     }
-    implementation(libs.jgit.ssh)
+    implementation(libs.jgit.apache)
 }

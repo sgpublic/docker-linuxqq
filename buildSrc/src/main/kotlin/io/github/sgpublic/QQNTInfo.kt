@@ -8,6 +8,7 @@ import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.gradle.api.DefaultTask
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 import org.jetbrains.kotlin.gradle.internal.ConfigurationPhaseAware
 import java.io.File
@@ -19,7 +20,8 @@ abstract class QQNTInfo: DefaultTask() {
     private var cache: JsonObject? = null
     private val cacheFile = File(project.rootDir, "linuxqq.json")
 
-    abstract val githubToken: Property<String>
+    @get:Input
+    abstract val token: Property<String>
 
     @TaskAction
     fun execute(): JsonObject = Git.open(project.rootDir).use { git ->
@@ -57,6 +59,8 @@ abstract class QQNTInfo: DefaultTask() {
         val qqntFile = "linuxqq-$qqntVersion.deb"
         content.add("linuxqq.file", JsonPrimitive(qqntFile))
 
+        content.add("dockerimage.verison", JsonPrimitive(project.version.toString()))
+
         if (content != readCache()) {
             cacheFile.writeText(GsonBuilder()
                 .setPrettyPrinting()
@@ -73,10 +77,14 @@ abstract class QQNTInfo: DefaultTask() {
                 .setName("v${qqntVersion}-${project.version}")
                 .call()
             git.push()
-                .setCredentialsProvider(UsernamePasswordCredentialsProvider(
-                    "sgpublic", githubToken.get()
-                ))
-                .setPushAll().call()
+                .also {
+                    if (token.orNull != null) {
+                        it.setCredentialsProvider(UsernamePasswordCredentialsProvider(
+                            "mhmzx", token.get()
+                        ))
+                    }
+                }
+                .setPushAll().setPushTags().call()
         }
 
         return content
