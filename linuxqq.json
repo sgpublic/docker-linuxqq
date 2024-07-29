@@ -3,5 +3,6 @@
   "linuxqq.url": "https://dldir1.qq.com/qqfile/qq/QQNT/Linux/QQ_3.2.10_240715_amd64_01.deb",
   "linuxqq.verison.code": 240715,
   "linuxqq.version": "3.2.10_240715",
-  "linuxqq.file": "linuxqq-3.2.10_240715.deb"
+  "linuxqq.file": "linuxqq-3.2.10_240715.deb",
+  "dockerimage.version": 8
 }
