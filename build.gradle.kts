@@ -13,6 +13,7 @@ import io.github.sgpublic.QQNTInfo
 import io.github.sgpublic.command
 import io.github.sgpublic.aptInstall
 import io.github.sgpublic.rm
+import io.github.sgpublic.replaceSourceListCommand
 import io.github.sgpublic.gradle.VersionGen
 
 plugins {
@@ -36,8 +37,7 @@ tasks {
             delete(layout.buildDirectory.file("docker-linuxqq"))
             copy {
                 from("./src/main/docker/")
-                include("*.sh")
-                into(layout.buildDirectory.dir("docker-linuxqq"))
+                into(layout.buildDirectory.dir("docker-linuxqq/rootf"))
             }
         }
         group = "docker"
@@ -47,6 +47,7 @@ tasks {
         from(Dockerfile.From("jlesage/baseimage-gui:${findProperty("baseimggui.version")}").withStage("qqntinstaller"))
         runCommand(provider {
             command(
+                replaceSourceListCommand(),
                 "apt-get update",
                 aptInstall(
                     "curl",
@@ -66,6 +67,7 @@ tasks {
         // 安装依赖
         from(Dockerfile.From("jlesage/baseimage-gui:${findProperty("baseimggui.version")}").withStage("deps"))
         runCommand(command(
+            replaceSourceListCommand(),
             "apt-get update",
             aptInstall(
                 "libcurl4",
@@ -101,7 +103,7 @@ tasks {
         workingDir("/home/linuxqq")
         copyFile(CopyFile("/", "/").withStage("deps"))
         copyFile(CopyFile("/", "/").withStage("qqntinstaller"))
-        copyFile("./startapp.sh", "/startapp.sh")
+        copyFile("/rootf", "/")
         val home = "/home/linuxqq"
         environmentVariable(provider {
             mapOf(
@@ -109,6 +111,7 @@ tasks {
                 "HOME" to home,
                 "APP_NAME" to "linuxqq",
                 "APP_VERSION" to "${qqntInfo["linuxqq.version"]}",
+                "DOCKER_IMAGE_VERSION" to "${qqntInfo["linuxqq.version"]}-${qqntInfo["dockerimage.version"]}",
                 "XDG_CONFIG_HOME" to "$home/config",
                 "QQ_HOME" to "/opt/QQ",
             )

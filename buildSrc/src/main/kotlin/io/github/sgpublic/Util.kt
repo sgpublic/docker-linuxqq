@@ -5,6 +5,7 @@ import com.google.gson.Gson
 import java.net.URI
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.time.ZoneId
 
 private val HttpClient by lazy {
     java.net.http.HttpClient.newHttpClient()
@@ -32,8 +33,9 @@ fun commandLine(command: String): String {
         .inputStream.reader().readText().trim()
 }
 
-fun command(vararg command: String): String {
-    return command.joinToString(" &&\\\n ")
+fun command(vararg command: String?): String {
+    return command.filterNotNull()
+        .joinToString(" &&\\\n ")
 }
 
 fun aptInstall(vararg pkg: String): String {
@@ -42,4 +44,10 @@ fun aptInstall(vararg pkg: String): String {
 
 fun rm(vararg file: String): String {
     return "rm -rf ${file.joinToString(" ")}"
+}
+
+fun replaceSourceListCommand(): String? = if (ZoneId.systemDefault().id == "Asia/Shanghai") {
+    "sed -i 's/deb.debian.org/mirrors.aliyun.com/' /etc/apt/sources.list"
+} else {
+    null
 }
