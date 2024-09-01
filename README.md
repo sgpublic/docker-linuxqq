@@ -8,7 +8,7 @@
 version: '3.1'
 services:
   linuxqq:
-    image: mhmzx/docker-linuxqq:v3.2.10_240715
+    image: mhmzx/docker-linuxqq:latest
     restart: unless-stopped
     ports:
       - 5800:5800
