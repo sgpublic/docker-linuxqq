@@ -45,7 +45,6 @@ tasks {
         from(Dockerfile.From("jlesage/baseimage-gui:${findProperty("baseimggui.version")}").withStage("qqntinstaller"))
         runCommand(provider {
             command(
-                replaceSourceListCommand(),
                 "apt-get update",
                 aptInstall(
                     "curl",
@@ -65,7 +64,6 @@ tasks {
         // 安装依赖
         from(Dockerfile.From("jlesage/baseimage-gui:${findProperty("baseimggui.version")}").withStage("deps"))
         runCommand(command(
-            replaceSourceListCommand(),
             "apt-get update",
             aptInstall(
                 "libcurl4",
