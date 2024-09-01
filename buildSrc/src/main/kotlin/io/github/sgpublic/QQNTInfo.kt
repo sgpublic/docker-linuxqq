@@ -4,13 +4,9 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
-import org.eclipse.jgit.api.Git
-import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.gradle.api.DefaultTask
-import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Input
+import org.gradle.api.Task
 import org.gradle.api.tasks.TaskAction
-import org.jetbrains.kotlin.gradle.internal.ConfigurationPhaseAware
 import java.io.File
 
 abstract class QQNTInfo: DefaultTask() {
@@ -18,17 +14,9 @@ abstract class QQNTInfo: DefaultTask() {
 
     private val qqntjsPattern = "var params= (.*?);".toRegex()
     private var cache: JsonObject? = null
-    private val cacheFile = File(project.rootDir, "linuxqq.json")
-
-    @get:Input
-    abstract val token: Property<String>
 
     @TaskAction
-    fun execute(): JsonObject = Git.open(project.rootDir).use { git ->
-        if (git.status().call().hasUncommittedChanges()) {
-            throw IllegalStateException("Please commit all the change before getting linuxqq version info!")
-        }
-
+    fun execute(): JsonObject {
         val content = JsonObject()
         val qqntParams = NetJsonObject(
             "https://im.qq.com/rainbow/linuxQQDownload"
@@ -39,7 +27,7 @@ abstract class QQNTInfo: DefaultTask() {
         }
 
         val qqntVersionName = qqntParams.get("version").asString
-        content.add("linuxqq.verison.name", JsonPrimitive(qqntVersionName))
+        content.add("linuxqq.version.name", JsonPrimitive(qqntVersionName))
         val qqntUrl = when (commandLine("dpkg --print-architecture")) {
             "amd64" -> qqntParams.get("x64DownloadUrl").asJsonObject.get("deb")
             "arm64" -> qqntParams.get("armDownloadUrl").asJsonObject.get("deb")
@@ -52,7 +40,7 @@ abstract class QQNTInfo: DefaultTask() {
         val qqntVersionCode = qqntVersionCodePattern.find(qqntUrl)?.value?.let {
             return@let it.substring(qqntVersionName.length + 1, it.length - 1).toLongOrNull()
         } ?: throw IllegalStateException("Cannot get qqnt version code.")
-        content.add("linuxqq.verison.code", JsonPrimitive(qqntVersionCode))
+        content.add("linuxqq.version.code", JsonPrimitive(qqntVersionCode))
 
         val qqntVersion = "${qqntVersionName}_${qqntVersionCode}"
         content.add("linuxqq.version", JsonPrimitive(qqntVersion))
@@ -70,24 +58,6 @@ abstract class QQNTInfo: DefaultTask() {
                 .create()
                 .toJson(content))
             this.cache = content
-
-            git.add().addFilepattern("linuxqq.json").call()
-            git.commit()
-                .setMessage("chore(linuxqq): update linuxqq $qqntVersion")
-                .setAuthor("updater", "updater@example.com")
-                .call()
-            git.tag()
-                .setName("v${qqntVersion}-${dockerImageVersion}")
-                .call()
-            git.push()
-                .also {
-                    if (token.orNull != null) {
-                        it.setCredentialsProvider(UsernamePasswordCredentialsProvider(
-                            "mhmzx", token.get()
-                        ))
-                    }
-                }
-                .setPushAll().setPushTags().call()
         }
 
         return content
@@ -110,3 +80,5 @@ abstract class QQNTInfo: DefaultTask() {
         }
     }
 }
+
+val Task.cacheFile: File get() = File(project.rootDir, "linuxqq.json")

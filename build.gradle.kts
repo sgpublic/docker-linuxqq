@@ -9,11 +9,7 @@ import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
 import com.bmuschko.gradle.docker.tasks.image.Dockerfile
 import com.bmuschko.gradle.docker.tasks.image.Dockerfile.CopyFile
 import com.github.breadmoirai.githubreleaseplugin.GithubReleaseTask
-import io.github.sgpublic.QQNTInfo
-import io.github.sgpublic.command
-import io.github.sgpublic.aptInstall
-import io.github.sgpublic.rm
-import io.github.sgpublic.replaceSourceListCommand
+import io.github.sgpublic.*
 import io.github.sgpublic.gradle.VersionGen
 
 plugins {
@@ -28,7 +24,9 @@ version = "${VersionGen.COMMIT_COUNT_VERSION}"
 tasks {
     val tag = "mhmzx/docker-linuxqq"
 
-    val qqntInfo by creating(QQNTInfo::class) {
+    val qqntInfo by creating(QQNTInfo::class)
+    val createTag by creating(CreateTag::class) {
+        dependsOn(qqntInfo)
         token = findEnv("publishing.gitlab.token")
     }
 
@@ -80,11 +78,6 @@ tasks {
                 "libxtst6",
                 "xauth",
                 "xvfb",
-
-//                    "slirp4netns",
-//                    "socat",
-//                    "util-linux",
-//                    "bsdmainutils",
             ),
             rm(
                 "/usr/share/fonts/*",

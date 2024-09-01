@@ -8,8 +8,7 @@ services:
     hostname: linuxqq-little-paimon
     restart: unless-stopped
     ports:
-      - 5800:5800
-      - 6010:6010
+      - 5801:5800
     environment:
       SECURE_CONNECTION: 1
       WEB_AUTHENTICATION: 1

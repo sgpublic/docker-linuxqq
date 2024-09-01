@@ -47,7 +47,7 @@ fun rm(vararg file: String): String {
 }
 
 fun replaceSourceListCommand(): String? = if (ZoneId.systemDefault().id == "Asia/Shanghai") {
-    "sed -i 's/deb.debian.org/mirrors.aliyun.com/' /etc/apt/sources.list"
+    "sed -i 's/deb.debian.org/mirrors.aliyun.com/' /etc/apt/sources.list.d/debian.sources"
 } else {
     null
 }
