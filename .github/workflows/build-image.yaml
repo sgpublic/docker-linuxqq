@@ -18,12 +18,6 @@ jobs:
           submodules: 'recursive'
           fetch-depth: 0
 
-      - name: Initialization environment
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        run: |
-          sudo timedatectl set-timezone "Asia/Shanghai"
-
       - name: Setup JDK 17
         uses: oracle-actions/setup-java@v1
         with:

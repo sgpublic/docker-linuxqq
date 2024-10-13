@@ -41,32 +41,11 @@ tasks {
         group = "docker"
         destFile = layout.buildDirectory.file("docker-linuxqq/Dockerfile")
 
-        // 安装 QQNT
-        from(Dockerfile.From("jlesage/baseimage-gui:${findProperty("baseimggui.version")}").withStage("qqntinstaller"))
-        runCommand(provider {
-            command(
-                "apt-get update",
-                aptInstall(
-                    "curl",
-                ),
-                "mkdir -p /tmp",
-                "curl -o /tmp/${qqntInfo["linuxqq.file"]} --retry 5 --retry-delay 3 ${qqntInfo["linuxqq.url"]}",
-                aptInstall(
-                    "/tmp/${qqntInfo["linuxqq.file"]}",
-                ),
-                rm(
-                    "/tmp/${qqntInfo["linuxqq.file"]}",
-                    "/usr/share/fonts/*",
-                ),
-            )
-        })
-
-        // 安装依赖
-        from(Dockerfile.From("jlesage/baseimage-gui:${findProperty("baseimggui.version")}").withStage("deps"))
+        from(Dockerfile.From("jlesage/baseimage-gui:debian-12-v4.6.4"))
         runCommand(command(
-            "apt-get update",
+            replaceSourceListCommand(),
+            "apt update",
             aptInstall(
-                "libcurl4",
                 "libnss3",
                 "libgbm-dev",
                 "libnotify-dev",
@@ -76,24 +55,28 @@ tasks {
                 "libxtst6",
                 "xauth",
                 "xvfb",
+                "fonts-wqy-microhei",
+            ),
+        ))
+        runCommand(command(
+            aptInstall(
+                "curl",
+            ),
+            "mkdir -p /tmp",
+            "curl -o /tmp/${qqntInfo["linuxqq.file"]} --retry 5 --retry-delay 3 ${qqntInfo["linuxqq.url"]}",
+            aptInstall(
+                "/tmp/${qqntInfo["linuxqq.file"]}",
             ),
             rm(
-                "/usr/share/fonts/*",
+                "/tmp/${qqntInfo["linuxqq.file"]}",
             ),
-            aptInstall(
-                "fonts-wqy-microhei",
-            )
         ))
 
-        // 最终构建
-        from(Dockerfile.From("jlesage/baseimage-gui:${findProperty("baseimggui.version")}"))
         runCommand(command(
             "mkdir -p /home/linuxqq",
             "chown 1000:1000 /home/linuxqq",
         ))
         workingDir("/home/linuxqq")
-        copyFile(CopyFile("/", "/").withStage("deps"))
-        copyFile(CopyFile("/", "/").withStage("qqntinstaller"))
         copyFile("/rootf", "/")
         val home = "/home/linuxqq"
         environmentVariable(provider {
@@ -137,6 +120,10 @@ tasks {
         tagName = provider { "v${qqntInfo["linuxqq.version"]}-${qqntInfo["dockerimage.version"]}" }
         releaseName = provider { "v${qqntInfo["linuxqq.version"]}-${qqntInfo["dockerimage.version"]}" }
         overwrite = true
+    }
+
+    val clean by creating(Delete::class) {
+        delete(rootProject.file("build"))
     }
 }
 

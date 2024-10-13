@@ -46,7 +46,6 @@ fun rm(vararg file: String): String {
     return "rm -rf ${file.joinToString(" ")}"
 }
 
-@Deprecated("deprecated")
 fun replaceSourceListCommand(): String? = if (ZoneId.systemDefault().id == "Asia/Shanghai") {
     "sed -i 's/deb.debian.org/mirrors.aliyun.com/' /etc/apt/sources.list.d/debian.sources"
 } else {
