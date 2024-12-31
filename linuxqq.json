@@ -1,8 +1,8 @@
 {
-  "linuxqq.version.name": "3.2.12",
-  "linuxqq.url": "https://dldir1.qq.com/qqfile/qq/QQNT/Linux/QQ_3.2.12_240927_amd64_01.deb",
-  "linuxqq.version.code": 240927,
-  "linuxqq.version": "3.2.12_240927",
-  "linuxqq.file": "linuxqq-3.2.12_240927.deb",
-  "dockerimage.version": 18
+  "linuxqq.version.name": "3.2.15",
+  "linuxqq.url": "https://dldir1.qq.com/qqfile/qq/QQNT/Linux/QQ_3.2.15_241224_amd64_01.deb",
+  "linuxqq.version.code": 241224,
+  "linuxqq.version": "3.2.15_241224",
+  "linuxqq.file": "linuxqq-3.2.15_241224.deb",
+  "dockerimage.version": 20
 }
